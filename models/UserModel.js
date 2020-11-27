@@ -32,3 +32,33 @@ const userSchema = mongoose.Schema({
     type: String
   }
 });
+
+// Saving user data
+userSchema.pre('save', function (next) {
+  var user = this;
+  if (user.isModified('password')) {
+    // Checking if password field is availabvle and modified
+    bcrypt.genSalt(SALT, function (err, salt) {
+      if (err) return next (err)
+      bcrypt.hash(user.password, salt, function (err, hash) {
+        if (err) return next(err)
+        user.password = hash;
+        next()
+      });
+    });
+  }
+  else
+  {
+    next();
+  }
+});
+
+// For comparing the user's entered password with database during login
+userSchema.methods.comparePassword = function (candidatePassword, callBack) {
+  bcrypt.compare(candidatePassword, this.password, function (err, isMatch) {
+    if (err) return callBack (err);
+    callBack(null, isMatch);
+  });
+}
+
+// for generating token when logged in
